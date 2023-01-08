@@ -25,7 +25,7 @@ connection.connect().then(result -> {
 
 # a note about `RetryableQueue`
 
-A class is included in this lib `RetryableQueue`. This is not part of the standard RabbitMQ api, it is however a pretty common EIP, so the decision was made to include it in the base library. Its fairly simple:
+A class is included in this lib `RetryableQueue` which is not part of the standard RabbitMQ api, it is however a pretty common EIP, so the decision was made to include it in the base library. Its fairly simple:
 
 * create a worker queue
 * create a retry queue that will feed the worker queue when a message on it expires
