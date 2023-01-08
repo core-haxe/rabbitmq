@@ -6,7 +6,7 @@ rabbitmq for all relevant haxe targets
 ```haxe
 var connection = new Connection("amqp://localhost");
 connection.connect().then(result -> {
-    return result.connection.createChannel(false); // can optionall create confirmation channels also
+    return result.connection.createChannel(false); // can optionally create confirmation channels also
 }).then(result -> {
     return result.channel.createExchange("logs", ExchangeType.Direct, { durable: true, alternateExchange: "logs.deadletter" });
 }).then(result -> {
