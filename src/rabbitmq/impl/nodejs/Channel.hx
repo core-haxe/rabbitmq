@@ -1,8 +1,8 @@
 package rabbitmq.impl.nodejs;
 
 import promises.Promise;
-import rabbitmq.externs.nodejs.Connection as NativeConnection;
 import rabbitmq.externs.nodejs.Channel as NativeChannel;
+import rabbitmq.externs.nodejs.Connection as NativeConnection;
 import rabbitmq.externs.nodejs.Message as NativeMessage;
 
 @:access(rabbitmq.impl.nodejs.Message)
@@ -32,6 +32,10 @@ class Channel extends ChannelBase {
     public override function createExchange(name:String, type:ExchangeType, ?options:ExchangeOptions):Promise<RabbitMQResult<Bool>> {
         var exchange = new Exchange(this, name, type);
         return exchange.create(options);
+    }
+
+    public function prefetch(count:Int) {
+        _nativeChannel.prefetch(count);
     }
 
     public override function ack(message:Message):Promise<RabbitMQResult<Bool>> {

@@ -15,6 +15,7 @@ typedef RetryableQueueOptions = {
     var ?queueTtl:Null<Int>; // this will be the queue ttl (default is no queue ttl), this is different from the message ttl - not that rabbitmq will pick the smallest ttl
     var ?exchangeName:String; // if you dont specific this, all the queues will be created on a new exchange (which is recommended)
     var ?producerOnly:Bool;
+    var ?prefetch:Null<Int>;
 }
 
 class RetryableQueue {
@@ -50,6 +51,11 @@ class RetryableQueue {
                 if (options.queueTtl != null) {
                     Reflect.setField(arguments, "x-message-ttl", options.queueTtl);
                 }
+                var prefetch = 1;
+                if (options.prefetch != null) {
+                    prefetch = options.prefetch;
+                }
+                result.channel.prefetch(prefetch);
                 return result.exchange.createBoundQueue(queueNameRetry, {durable: true, arguments: arguments}, queueNameRetry);
             }).then(result -> {
                 retryQueue = result.queue;
