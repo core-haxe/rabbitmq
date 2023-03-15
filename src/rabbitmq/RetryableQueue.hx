@@ -14,6 +14,7 @@ typedef RetryableQueueOptions = {
     var ?queueNameRetry:String; // the name of the "retry" queue (if not specified it will be the queueName and a "-retry" suffix)
     var ?queueTtl:Null<Int>; // this will be the queue ttl (default is no queue ttl), this is different from the message ttl - not that rabbitmq will pick the smallest ttl
     var ?exchangeName:String; // if you dont specific this, all the queues will be created on a new exchange (which is recommended)
+    var ?producerOnly:Bool;
 }
 
 class RetryableQueue {
@@ -56,7 +57,9 @@ class RetryableQueue {
             }).then(result -> {
                 exchange = result.exchange;
                 queue = result.queue;
-                queue.onMessage = onMessageInternal;
+                if (!options.producerOnly) {
+                    queue.onMessage = onMessageInternal;
+                }
                 resolve(this);
                 return null;
             }, (error:RabbitMQError) -> {
