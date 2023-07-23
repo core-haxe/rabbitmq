@@ -38,7 +38,15 @@ class QueueBase {
         return value;
     }
 
-    public function startConsuming(?options:ConsumeOptions) {
-        
+    public function startConsuming(?options:ConsumeOptions):Promise<RabbitMQResult<Bool>> {
+        return new Promise((resolve, reject) -> {
+            reject(new RabbitMQError("not implemented", 'function "${Type.getClassName(Type.getClass(this))}::startConsuming" not implemented'));
+        });
+    }
+
+    public function stopConsuming():Promise<RabbitMQResult<Bool>> {
+        return new Promise((resolve, reject) -> {
+            reject(new RabbitMQError("not implemented", 'function "${Type.getClassName(Type.getClass(this))}::startConsuming" not implemented'));
+        });
     }
 }

@@ -9,7 +9,8 @@ extern class ConfirmChannel {
     public function assertQueue(?name:String, ?options:QueueOptions, ?callback:Error->QueueDetails->Void):Void;
     public function publish(exchange:String, routingKey:String, buffer:BytesBuffer, ?options:PublishOptions, ?callback:Error->Bool->Void):Void;
     public function sendToQueue(name:String, buffer:BytesBuffer, ?options:SendOptions, ?callback:Error->Bool->Void):Void;
-    public function consume(name:String, messageCallback:Message->Void, ?options:ConsumeOptions, ?callback:Error->Bool->Void):Void;
+    public function consume(name:String, messageCallback:Message->Void, ?options:ConsumeOptions, ?callback:Error->Dynamic->Void):Void;
+    public function cancel(consumerTag:String, ?callback:Error->Dynamic->Void):Void;
     public function prefetch(count:Int):Void;
     public function ack(message:Message, ?allUpTo:Bool):Void;
     public function ackAll():Void;

@@ -7,6 +7,8 @@ import rabbitmq.externs.nodejs.ConfirmChannel as NativeConfirmChannel;
 
 @:access(rabbitmq.impl.nodejs.Message)
 class Queue extends QueueBase {
+    private var consumerTag:String;
+
     public override function create(?options:QueueOptions):Promise<RabbitMQResult<Bool>> {
         return new Promise((resolve, reject) -> {
             if (confirmationChannel) {
@@ -59,26 +61,54 @@ class Queue extends QueueBase {
         });
     }
 
-    public override function startConsuming(?options:ConsumeOptions) {
-        if (confirmationChannel) {
-            nativeConfirmChannel.consume(this.name, (nativeMessage) -> {
-                var message = new Message(nativeMessage.content.toBytes());
-                message.channel = this.channel;
-                message.nativeMessage = nativeMessage;
-                if (_onMessage != null) {
-                    _onMessage(message);
+    public override function startConsuming(?options:ConsumeOptions):Promise<RabbitMQResult<Bool>> {
+        return new Promise((resolve, reject) -> {
+            if (confirmationChannel) {
+                nativeConfirmChannel.consume(this.name, (nativeMessage) -> {
+                    var message = new Message(nativeMessage.content.toBytes());
+                    message.channel = this.channel;
+                    message.nativeMessage = nativeMessage;
+                    if (_onMessage != null) {
+                        _onMessage(message);
+                    }
+                }, options, (error, response) -> {
+                    consumerTag = response.consumerTag;
+                    resolve(new RabbitMQResult(channel.connection, true, channel, null, this));
+                });
+            } else {
+                nativeChannel.consume(this.name, (nativeMessage) -> {
+                    var message = new Message(nativeMessage.content.toBytes());
+                    message.channel = this.channel;
+                    message.nativeMessage = nativeMessage;
+                    if (_onMessage != null) {
+                        _onMessage(message);
+                    }
+                }, options, (error, response) -> {
+                    consumerTag = response.consumerTag;
+                    resolve(new RabbitMQResult(channel.connection, true, channel, null, this));
+                });
+            }
+        });
+    }
+
+    public override function stopConsuming():Promise<RabbitMQResult<Bool>> {
+        return new Promise((resolve, reject) -> {
+            if (consumerTag == null) {
+                resolve(new RabbitMQResult(channel.connection, true, channel, null, this));
+            } else {
+                if (confirmationChannel) {
+                    nativeConfirmChannel.cancel(consumerTag, (error, ok) -> {
+                        consumerTag = null;
+                        resolve(new RabbitMQResult(channel.connection, true, channel, null, this));
+                    });
+                } else {
+                    nativeChannel.cancel(consumerTag, (error, ok) -> {
+                        consumerTag = null;
+                        resolve(new RabbitMQResult(channel.connection, true, channel, null, this));
+                    });
                 }
-            }, options);
-        } else {
-            nativeChannel.consume(this.name, (nativeMessage) -> {
-                var message = new Message(nativeMessage.content.toBytes());
-                message.channel = this.channel;
-                message.nativeMessage = nativeMessage;
-                if (_onMessage != null) {
-                    _onMessage(message);
-                }
-            }, options);
-        }
+            }
+        });
     }
 
     private var confirmationChannel(get, null):Bool;

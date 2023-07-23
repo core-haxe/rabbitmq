@@ -54,6 +54,19 @@ class Channel extends ChannelBase {
         });
     }
 
+    public override function close():Promise<RabbitMQResult<Bool>> {
+        return new Promise((resolve, reject) -> {
+            if (_nativeChannel == null) {
+                resolve(new RabbitMQResult(connection, true, this));            
+            } else {
+                _nativeChannel.close((error) -> {
+                    _nativeChannel = null;
+                    resolve(new RabbitMQResult(connection, true, this));            
+                });
+            }
+        });
+    }
+
     private var nativeConnection(get, null):NativeConnection;
     private function get_nativeConnection():NativeConnection {
         return @:privateAccess cast(connection, Connection)._nativeConnection;

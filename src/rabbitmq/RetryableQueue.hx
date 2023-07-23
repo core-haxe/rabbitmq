@@ -29,6 +29,19 @@ class RetryableQueue {
         this.options  = options;
     }
 
+    private var _name:String = null;
+    public var name(get, set):String;
+    private function get_name() {
+        if (queue != null) {
+            return queue.name;
+        }
+        return _name;
+    }
+    private function set_name(value:String):String {
+        _name = value;
+        return value;
+    }
+
     public function start():Promise<RetryableQueue> {
         return new Promise((resolve, reject) -> {
             this.connection = options.connection;
@@ -67,7 +80,6 @@ class RetryableQueue {
                     queue.onMessage = onMessageInternal;
                 }
                 resolve(this);
-                return null;
             }, (error:RabbitMQError) -> {
                 reject(error);
             });
@@ -108,37 +120,22 @@ class RetryableQueue {
         return value;
     }
 
-}
-
-/*
-
-        var connection = new Connection("amqp://localhost");
-        connection.connect().then(result -> {
-			var retryableQueue = new RetryableQueue({
-				connection: result.connection,
-				queueName: "my-test2"
-			});
-			return retryableQueue.start();
-        }).then(retryableQueue -> {
-			retryableQueue.onMessage = (message) -> {
-				var now = Date.now().getTime();
-				var content = message.content;
-				var enqueTime = Std.parseFloat(content.toString());
-				var delta = now - enqueTime;
-				trace("got message", content, (delta / 1000) + "s", message.headers.get("foo"));
-
-				message.ack();
-
-				retryableQueue.retry(message.clone(), 1000);
-			}
-
-			var time = Date.now().getTime();
-			var message = new Message("" + time, ["foo" => "bar"]);
-			retryableQueue.publish(message);
-			return null;
-		}, (error:RabbitMQError) -> {
-            connection.close();
-            trace("!!!!!!!!!!!!!!!!!!!!! ERROR! ", error.name, error.message);
+    public function close():Promise<Bool> {
+        return new Promise((resolve, reject) -> {
+            queue.stopConsuming().then(_ -> {
+                return exchange.channel.close();
+            }).then(result -> {
+                resolve(true);
+            }, error -> {
+                reject(error);
+            });
+            /*
+            exchange.channel.close().then(_ -> {
+                resolve(true);
+            }, error -> {
+                reject(error);
+            });
+            */
         });
-
-*/
+    }
+}

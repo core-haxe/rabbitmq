@@ -38,4 +38,10 @@ class ChannelBase {
             reject(new RabbitMQError("not implemented", 'function "${Type.getClassName(Type.getClass(this))}::nack" not implemented'));
         });
     }
+
+    public function close():Promise<RabbitMQResult<Bool>> {
+        return new Promise((resolve, reject) -> {
+            reject(new RabbitMQError("not implemented", 'function "${Type.getClassName(Type.getClass(this))}::ack" not implemented'));
+        });
+    }
 }
