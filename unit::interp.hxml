@@ -1,0 +1,4 @@
+-lib promises
+-cp src
+--macro include('rabbitmq',true,['rabbitmq.externs','rabbitmq.impl.nodejs'])
+--interp
