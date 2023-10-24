@@ -44,4 +44,7 @@ class ChannelBase {
             reject(new RabbitMQError("not implemented", 'function "${Type.getClassName(Type.getClass(this))}::ack" not implemented'));
         });
     }
+    public function prefetch(count:Int) {
+        return throw "UNIMPLEMENTED";
+    }
 }
