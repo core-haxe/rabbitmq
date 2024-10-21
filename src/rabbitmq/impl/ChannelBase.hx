@@ -1,5 +1,6 @@
 package rabbitmq.impl;
 
+import haxe.io.Bytes;
 import promises.Promise;
 
 class ChannelBase {
@@ -39,9 +40,15 @@ class ChannelBase {
         });
     }
 
+    public function sendToQueue(name:String, bytes:Bytes):Promise<RabbitMQResult<Bool>> {
+        return new Promise((resolve, reject) -> {
+            reject(new RabbitMQError("not implemented", 'function "${Type.getClassName(Type.getClass(this))}::sendToQueue" not implemented'));
+        });
+    }
+
     public function close():Promise<RabbitMQResult<Bool>> {
         return new Promise((resolve, reject) -> {
-            reject(new RabbitMQError("not implemented", 'function "${Type.getClassName(Type.getClass(this))}::ack" not implemented'));
+            reject(new RabbitMQError("not implemented", 'function "${Type.getClassName(Type.getClass(this))}::close" not implemented'));
         });
     }
 }

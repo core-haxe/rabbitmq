@@ -1,5 +1,7 @@
 package rabbitmq.impl.nodejs;
 
+import rabbitmq.externs.nodejs.BytesBuffer;
+import haxe.io.Bytes;
 import promises.Promise;
 import rabbitmq.externs.nodejs.Channel as NativeChannel;
 import rabbitmq.externs.nodejs.Connection as NativeConnection;
@@ -64,6 +66,13 @@ class Channel extends ChannelBase {
                     resolve(new RabbitMQResult(connection, true, this));            
                 });
             }
+        });
+    }
+
+    public override function sendToQueue(name:String, bytes:Bytes):Promise<RabbitMQResult<Bool>> {
+        return new Promise((resolve, reject) -> {
+            _nativeChannel.sendToQueue(name, BytesBuffer.fromBytes(bytes));
+            resolve(new RabbitMQResult(connection, true, this));
         });
     }
 
