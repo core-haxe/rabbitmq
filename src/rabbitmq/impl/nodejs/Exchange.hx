@@ -10,7 +10,10 @@ import rabbitmq.externs.nodejs.PublishOptions as NativePublishOptions;
 class Exchange extends ExchangeBase {
     private var _nativeExchange:NativeExchange = null;
 
+    private var _autoReconnectOptions:ExchangeOptions = null;
+
     public override function create(?options:ExchangeOptions):Promise<RabbitMQResult<Bool>> {
+        _autoReconnectOptions = options;
         return new Promise((resolve, reject) -> {
             var type:String = this.type;
             if (confirmationChannel) {
@@ -101,9 +104,75 @@ class Exchange extends ExchangeBase {
                     resolve(new RabbitMQResult(channel.connection, message, channel, this));
                 });
             } else {
-                nativeChannel.publish(this.name, routingKey, messageContent, nativeOptions);
-                resolve(new RabbitMQResult(channel.connection, message, channel, this));
+                try {
+                    nativeChannel.publish(this.name, routingKey, messageContent, nativeOptions);
+                    resolve(new RabbitMQResult(channel.connection, message, channel, this));
+                } catch (e:Dynamic) {
+                    checkDisconnection(e).then(reconnected -> {
+                        if (reconnected) {
+                            trace("republishing message after reconnection");
+                            publish(message, routingKey, options).then(publishResult -> {
+                                resolve(publishResult);
+                            }, error -> {
+                                reject(error);
+                            });
+                        } else {
+                            reject(new RabbitMQError("could not auto reconnected after disconnection", "could not auto reconnected after disconnection"));
+                        }
+                    }, error -> {
+                        reject(new RabbitMQError(error, error));
+                    });
+                }
             }
+        });
+    }
+
+    private function checkDisconnection(exception:Dynamic):Promise<Bool> {
+        return new Promise((resolve, reject) -> {
+            var exceptionString = Std.string(exception);
+            if (ConnectionManager.autoReconnect && exceptionString == "IllegalOperationError: Channel closed") { // TODO: flakey error recognition
+                attemptReconnect().then(_ -> {
+                    resolve(true);
+                }, error -> {
+                    trace("error", error);
+                });
+            } else { // if we arent setup for reconnection, we'll reject and handle as a normal error
+                reject(exception);
+            }
+        });
+    }
+
+    private function attemptReconnect():Promise<Bool> {
+        return new Promise((resolve, reject) -> {
+            haxe.Timer.delay(() -> {
+                _attemptReconnect(resolve, reject);
+            }, ConnectionManager.autoReconnectIntervalMS);
+        });
+    }
+
+    private function _attemptReconnect(resolve:Bool->Void, reject:Any->Void) {
+        trace("connection dropped, attempting to reconnect");
+        // we'll force a new connection here, not technically need since the connection manager
+        // will automatically clean itself up, but this is an added level of being sure
+        ConnectionManager.instance.getConnection(channel.connection.url, true).then(connection -> {
+            // we'll need to rebuild the channel and update the references in this exchange
+            // since all the old references are now stale and no longer valid
+            if (confirmationChannel) {
+                var confirmChannel = new ConfirmChannel(connection);
+                return confirmChannel.create();
+            }
+            var channel = new Channel(connection);
+            return channel.create();
+        }).then(result -> {
+            this.channel = result.channel;
+            return this.create(_autoReconnectOptions);
+        }).then(_ -> {
+            trace("reconnected successfully after dropped connection");
+            resolve(true);
+        }, error -> {
+            haxe.Timer.delay(() -> {
+                _attemptReconnect(resolve, reject);
+            }, ConnectionManager.autoReconnectIntervalMS);
         });
     }
 

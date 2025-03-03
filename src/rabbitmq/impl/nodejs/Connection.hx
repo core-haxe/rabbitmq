@@ -16,9 +16,19 @@ class Connection extends ConnectionBase {
                 }
 
                 _nativeConnection = connection;
+                _nativeConnection.on("close", onInternalClose);
+                _nativeConnection.on("error", onInternalError);
                 resolve(new RabbitMQResult(this, true));
             });
         });
+    }
+
+    private function onInternalClose(_) {
+        dispatchListeners("close", null);
+    }
+
+    private function onInternalError(error:Any) {
+        dispatchListeners("error", error);
     }
 
     public override function close():Promise<RabbitMQResult<Bool>> {

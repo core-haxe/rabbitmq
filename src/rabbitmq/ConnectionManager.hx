@@ -3,6 +3,9 @@ package rabbitmq;
 import promises.Promise;
 
 class ConnectionManager {
+    public static var autoReconnect:Bool = true;
+    public static var autoReconnectIntervalMS:Int = 1000;
+
     private static var _instance:ConnectionManager = null;
     public static var instance(get, null):ConnectionManager;
     private static function get_instance():ConnectionManager {
@@ -19,7 +22,15 @@ class ConnectionManager {
 
     }
 
-    public function getConnection(url:String):Promise<Connection> {
+    public function getConnection(url:String, force:Bool = false):Promise<Connection> {
+        if (force) { // we can force a new connection, this is useful for reconnection (the connection listeners will clean up anyway, but this way we dont need to rely on any order)
+            var connection = _connections.get(url);
+            _connections.remove(url);
+            if (connection != null) {
+                connection.unlistenFor("close", onConnectionClosed);
+                connection.unlistenFor("error", onConnectionErrored);
+            }
+        }
         return new Promise((resolve, reject) -> {
             var connection = _connections.get(url);
             if (connection != null) {
@@ -28,6 +39,8 @@ class ConnectionManager {
             }
 
             var connection = new Connection(url);
+            connection.listenFor("close", onConnectionClosed);
+            connection.listenFor("error", onConnectionErrored);
             connection.connect().then(result -> {
                 _connections.set(url, connection);
                 resolve(connection);
@@ -35,5 +48,16 @@ class ConnectionManager {
                 reject(error);
             });
         });
+    }
+
+    private function onConnectionClosed(_, connection:Connection) {
+        trace(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> onConnectionClosed");
+        connection.unlistenFor("close", onConnectionClosed);
+        connection.unlistenFor("error", onConnectionErrored);
+        _connections.remove(connection.url);
+    }
+
+    private function onConnectionErrored(error:Any, connection:Connection) {
+        trace(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> onConnectionErrored", error);
     }
 }

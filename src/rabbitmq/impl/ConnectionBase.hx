@@ -5,8 +5,35 @@ import promises.Promise;
 class ConnectionBase {
     public var url:String;
 
+    private var _listeners:Map<String, Array<Any->Connection->Void>> = [];
+
     public function new(url:String) {
         this.url = url;
+    }
+
+    public function listenFor(event:String, callback:Any->Connection->Void) {
+        var list = _listeners.get(event);
+        if (list == null) {
+            list = [];
+            _listeners.set(event, list);
+        }
+        list.push(callback);
+    }
+
+    public function unlistenFor(event:String, callback:Any->Connection->Void) {
+        var list = _listeners.get(event);
+        if (list != null) {
+            list.remove(callback);
+        }
+    }
+
+    private function dispatchListeners(event:String, param:Any) {
+        var list = _listeners.get(event);
+        if (list != null) {
+            for (l in list) {
+                l(param, cast this);
+            }
+        }
     }
 
     public function connect():Promise<RabbitMQResult<Bool>> {
