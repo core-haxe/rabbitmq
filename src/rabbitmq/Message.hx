@@ -4,6 +4,10 @@ package rabbitmq;
 
 typedef Message = rabbitmq.impl.nodejs.Message;
 
+#elseif php
+
+typedef Message = rabbitmq.impl.php.Message;
+
 #else
 
 typedef Message = rabbitmq.impl.fallback.Message;
