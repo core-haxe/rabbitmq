@@ -1,5 +1,6 @@
 package rabbitmq;
 
+import promises.PromiseUtils;
 import promises.Promise;
 
 class ConnectionManager {
@@ -20,6 +21,21 @@ class ConnectionManager {
     private var _connections:Map<String, Connection> = [];
     private function new() {
 
+    }
+
+    public function closeAll():Promise<Bool> {
+        return new Promise((resolve, reject) -> {
+            var promises = [];
+            for (connection in _connections) {
+                promises.push(connection.close.bind());
+            }
+    
+            PromiseUtils.runSequentially(promises).then(_ -> {
+                resolve(true);
+            }, error -> {
+                reject(error);
+            });
+        });
     }
 
     public function getConnection(url:String, force:Bool = false):Promise<Connection> {
