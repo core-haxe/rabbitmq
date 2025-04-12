@@ -116,15 +116,20 @@ class RetryableQueue {
     }
     private function set_onMessage(value:Message->Void):Message->Void {
         _onMessage = value;
-        queue.startConsuming();
+        if (_onMessage != null) {
+            queue.startConsuming();
+        }
         return value;
     }
 
     public function close():Promise<Bool> {
         return new Promise((resolve, reject) -> {
             queue.stopConsuming().then(_ -> {
+                return retryQueue.stopConsuming();
+            }).then(result -> {
                 return exchange.channel.close();
             }).then(result -> {
+                _onMessage = null;
                 resolve(true);
             }, error -> {
                 reject(error);
