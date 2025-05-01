@@ -68,8 +68,6 @@ class ConnectionManager {
 
     private function onConnectionClosed(_, connection:Connection) {
         trace(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> onConnectionClosed");
-        connection.unlistenFor("close", onConnectionClosed);
-        connection.unlistenFor("error", onConnectionErrored);
         _connections.remove(connection.url);
     }
 
