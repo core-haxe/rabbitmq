@@ -67,11 +67,9 @@ class ConnectionManager {
     }
 
     private function onConnectionClosed(_, connection:Connection) {
-        trace(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> onConnectionClosed");
         _connections.remove(connection.url);
     }
 
     private function onConnectionErrored(error:Any, connection:Connection) {
-        trace(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> onConnectionErrored", error);
     }
 }
